@@ -1,8 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:nofliesynck/appwrite_logic/appwrite_global_service.dart';
+import 'package:nofliesynck/appwrite_logic/auth_ui_service.dart';
 import 'package:nofliesynck/screens/homepage.dart';
+import 'package:provider/provider.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (_) => AuthUIService(),
+        ),
+      ],
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -22,7 +34,7 @@ class MyApp extends StatelessWidget {
       home: HomePage(
         isDark: false,
         toggleTheme: () {
-          
+
         },
       ),
     );

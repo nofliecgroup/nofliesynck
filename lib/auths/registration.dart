@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:nofliesynck/helpers/animated_background.dart';
-import 'package:nofliesynck/logics/auth_service.dart';
+import 'package:nofliesynck/appwrite_logic/auth_service.dart';
 
 
 class EnhanceRegistration extends StatefulWidget {
@@ -106,15 +106,29 @@ class _EnhanceRegistrationState extends State<EnhanceRegistration>
         // Simulate haptic feedback
         HapticFeedback.mediumImpact();
 
-        await _authService.register(
+        final response = await _authService.registerUser(  // Changed from register to registerUser
           email: _emailController.text.trim(),
           password: _passwordController.text,
           name: _nameController.text.trim(),
         );
 
         if (mounted) {
-          // Show success animation
-          _showSuccessDialog();
+          if (response.success) {
+            // Show success animation
+            _showSuccessDialog();
+          } else {
+            // Show error message from response
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(response.message),
+                backgroundColor: Colors.red,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            );
+          }
         }
       } catch (e) {
         if (mounted) {

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:nofliesynck/appwrite_logic/auth_ui_service.dart';
 import 'package:nofliesynck/auths/registration.dart';
-import 'package:nofliesynck/logics/auth_service.dart';
+import 'package:nofliesynck/appwrite_logic/auth_service.dart';
 import 'package:nofliesynck/services/trial_service.dart';
+import 'package:provider/provider.dart';
 
 import '../helpers/animated_background.dart';
 
@@ -65,26 +67,41 @@ Future<void> _handleLogin() async {
     setState(() => _isLoading = true);
 
     try {
-      await _authService.login(
+      final success = await context.read<AuthUIService>().login(
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
 
-      if (mounted) {
-        final userProfile = await _authService.getUserProfile((await _authService.account.get()).$id);
+      if (success && mounted) {
+        // Get user data including trial status
+        final userData = context.read<AuthUIService>().userData;
+        final trialStatus = userData?['trial'];
 
-        // Initialize trial service
-        final trialService = TrialService();
-        await trialService.initializeTrial(userProfile['id']);
+        // Show success dialog
+        _showLoginSuccessDialog(trialStatus['isValid'] == false);
 
-        // Get trial status
-        final trialStatus = await trialService.getTrialStatus();
-
-        // Show success dialog with trial status
-        _showLoginSuccessDialog(trialStatus['isExpired']);
+        // Navigate to home if trial is valid
+        if (trialStatus['isValid']) {
+          Navigator.of(context).pushReplacementNamed('/home');
+        }
       }
     } catch (e) {
-      // ... error handling ...
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Login failed: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 }
