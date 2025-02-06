@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:nofliesynck/auths/registration.dart';
 import 'package:nofliesynck/logics/auth_service.dart';
+import 'package:nofliesynck/services/trial_service.dart';
 
 import '../helpers/animated_background.dart';
 
@@ -59,7 +60,36 @@ class _EnhancedLoginState extends State<EnhancedLogin>
     super.dispose();
   }
 
-  Future<void> _handleLogin() async {
+Future<void> _handleLogin() async {
+  if (_formKey.currentState!.validate()) {
+    setState(() => _isLoading = true);
+
+    try {
+      await _authService.login(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
+
+      if (mounted) {
+        final userProfile = await _authService.getUserProfile((await _authService.account.get()).$id);
+
+        // Initialize trial service
+        final trialService = TrialService();
+        await trialService.initializeTrial(userProfile['id']);
+
+        // Get trial status
+        final trialStatus = await trialService.getTrialStatus();
+
+        // Show success dialog with trial status
+        _showLoginSuccessDialog(trialStatus['isExpired']);
+      }
+    } catch (e) {
+      // ... error handling ...
+    }
+  }
+}
+
+  /* Future<void> _handleLogin() async {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
 
@@ -98,7 +128,8 @@ class _EnhancedLoginState extends State<EnhancedLogin>
         }
       }
     }
-  }
+  } */
+
 
   void _showLoginSuccessDialog(bool isTrialExpired) {
     showDialog(
